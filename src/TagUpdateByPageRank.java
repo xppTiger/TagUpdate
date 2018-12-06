@@ -1,70 +1,55 @@
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
  * Created by Haiping on 2018/11/30
  */
+
 public class TagUpdateByPageRank {
 
-    public HashMap<String, PageRankNode> users;
-    public HashMap<String, PageRankNode> videos;
 
-    public TagUpdateByPageRank(HashMap<String, PageRankNode> users, HashMap<String, PageRankNode> videos){
-        this.users = users;
-        this.videos = videos;
+
+    public HashMap<String, PageRankNode> nodes;
+
+    public TagUpdateByPageRank(HashMap<String, PageRankNode> nodes){
+        if(nodes != null){
+            this.nodes = nodes;
+        }else{
+            this.nodes = new LinkedHashMap<>();
+        }
+    }
+
+    public void addNode(PageRankNode node){
+        nodes.put(node.getNodeId(), node);
     }
 
     public void initialize(){
-        for(Map.Entry<String, PageRankNode> entry: videos.entrySet())
-        {
+        for(Map.Entry<String, PageRankNode> entry: nodes.entrySet()){
             ((PageRankNode) entry.getValue()).initialize();
         }
-
-        for(Map.Entry<String, PageRankNode> entry: users.entrySet())
-        {
-             ((PageRankNode) entry.getValue()).initialize();
-        }
-
     }
 
     public void update(){
-        for(Map.Entry<String, PageRankNode> entry: videos.entrySet())
-        {
+        for(Map.Entry<String, PageRankNode> entry: nodes.entrySet()){
             ((PageRankNode) entry.getValue()).updateNeighborTag();
         }
-
-        for(Map.Entry<String, PageRankNode> entry: users.entrySet())
-        {
-            ((PageRankNode) entry.getValue()).updateNeighborTag();
-        }
-
-
     }
 
     public void getOldTag(){
-        for(Map.Entry<String, PageRankNode> entry: users.entrySet())
+        for(Map.Entry<String, PageRankNode> entry: nodes.entrySet())
         {
-            PageRankNode user = entry.getValue();
-            System.out.println("user "+user.getNodeId()+" oldTagValue: "+user.getOldTagValue()[0]);
-        }
-        for(Map.Entry<String, PageRankNode> entry: videos.entrySet())
-        {
-            PageRankNode video = entry.getValue();
-            System.out.println("video "+video.getNodeId()+" oldTagValue: "+video.getOldTagValue()[0]);
+            PageRankNode node = entry.getValue();
+            System.out.println("node "+node.getNodeId()+", "+node.oldTagToString());
         }
         System.out.println("===================================");
     }
 
     public void getNewTag(){
-        for(Map.Entry<String, PageRankNode> entry: users.entrySet())
+        for(Map.Entry<String, PageRankNode> entry: nodes.entrySet())
         {
-            PageRankNode user = entry.getValue();
-            System.out.println("user "+user.getNodeId()+" newTagValue: "+user.getNewTagValue()[0]);
-        }
-        for(Map.Entry<String, PageRankNode> entry: videos.entrySet())
-        {
-            PageRankNode video = entry.getValue();
-            System.out.println("video "+video.getNodeId()+" newTagValue: "+video.getNewTagValue()[0]);
+            PageRankNode node = entry.getValue();
+            System.out.println("user "+node.getNodeId()+", "+node.newTagToString());
         }
         System.out.println("===================================");
     }

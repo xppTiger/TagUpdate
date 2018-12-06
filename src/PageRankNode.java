@@ -1,4 +1,4 @@
-import java.util.ArrayList;
+import java.util.*;
 
 
 /**
@@ -10,14 +10,11 @@ public class PageRankNode {
     private ArrayList<PageRankNode> neighborList;
     private ArrayList<Double> linkValueList;
     private double totalLinkValue;
-    public double[] oldTagValue;
-    public double[] newTagValue;
+    public HashMap<String, Double> oldTag;
+    public HashMap<String, Double> newTag;
 
-    public PageRankNode(String Id, ArrayList<PageRankNode> neighborList, ArrayList<Double> linkValueList, double[] tagValue){
-        if((tagValue != null)&&(tagValue.length != Properties.numTag)){
-            System.out.println("Mismatched tag value length");
-            return;
-        }
+    public PageRankNode(String Id, ArrayList<PageRankNode> neighborList, ArrayList<Double> linkValueList, HashMap<String, Double> tag){
+
         if((neighborList != null)&&(linkValueList!=null)&&(neighborList.size() != linkValueList.size())){
             System.out.println("Mismatch between pageRankNodeList and score length");
             return;
@@ -39,11 +36,12 @@ public class PageRankNode {
             this.totalLinkValue += linkValueList.get(i);
         }
 
-        this.oldTagValue = new double[Properties.numTag];
-        this.newTagValue = new double[Properties.numTag];
-        for(int i=0; i<Properties.numTag;i++){
-            this.oldTagValue[i] = tagValue[i];
-            this.newTagValue[i] = tagValue[i];
+        if(tag != null){
+            this.oldTag = tag;
+            this.newTag = tag;
+        }else{
+            this.oldTag = new LinkedHashMap<>();
+            this.newTag = new LinkedHashMap<>();
         }
     }
 
@@ -65,25 +63,81 @@ public class PageRankNode {
             this.linkValueList.add(linkValue);
             this.totalLinkValue += linkValue;
         }
+    }
 
+    public void addToOldTag(String tagName, double tagValue){
+        if(this.oldTag.containsKey(tagName)) {
+            System.out.println("exsited tag name in oldTag");
+        }
+         this.oldTag.put(tagName, tagValue);
+    }
+
+    public void updateOldTag(String tagName, double tagValue){
+        if(oldTag.containsKey(tagName)){
+            double oldValue = oldTag.get(tagName);
+            oldTag.put(tagName, oldValue + tagValue);
+        }else{
+            oldTag.put(tagName, tagValue);
+        }
+    }
+
+    public void addToNewTag(String tagName, double tagValue){
+        if(this.newTag.containsKey(tagName)){
+            System.out.println("existed tag name in newTag");
+        }
+        this.newTag.put(tagName, tagValue);
+    }
+
+    public void updateNewTag(String tagName, double tagValue){
+        if(newTag.containsKey(tagName)){
+            double oldValue = newTag.get(tagName);
+            newTag.put(tagName, oldValue + tagValue);
+        }else{
+            newTag.put(tagName, tagValue);
+        }
     }
 
     public void initialize(){
-        for(int i=0; i<Properties.numTag; i++){
-            oldTagValue[i] = newTagValue[i];
-            newTagValue[i] = 0;
-        }
+
+//        for (Iterator<Map.Entry<String, Double>> it = oldTag.entrySet().iterator(); it.hasNext();){
+//            Map.Entry<String, Double> item = it.next();
+//            //... todo with item
+//            it.remove();
+//        }
+        oldTag = newTag;
+        newTag = new LinkedHashMap<>();
     }
 
     public void updateNeighborTag(){
         int neighborListLength = neighborList.size();
         for(int i = 0; i<neighborListLength; i++){
             PageRankNode prNode = neighborList.get(i);
-            for(int j=0; j<Properties.numTag; j++){
-                prNode.newTagValue[j] += oldTagValue[j] * linkValueList.get(i) / totalLinkValue;
+            for(Map.Entry<String, Double> entry: oldTag.entrySet()){
+                if(totalLinkValue == 0){
+                    prNode.updateNewTag(entry.getKey(), 0.0);
+                }else{
+                    prNode.updateNewTag(entry.getKey(), entry.getValue()*linkValueList.get(i)/totalLinkValue);
+                }
             }
         }
     }
+
+    public String oldTagToString(){
+        String result = "";
+        for(Map.Entry<String, Double> entry: oldTag.entrySet()){
+            result += entry.getKey() + ": "+entry.getValue()+", ";
+        }
+        return result;
+    }
+
+    public String newTagToString(){
+        String result = "";
+        for(Map.Entry<String, Double> entry: newTag.entrySet()){
+            result += entry.getKey() + ": "+entry.getValue()+", ";
+        }
+        return result;
+    }
+
 
     public String getNodeId() {
         return nodeId;
@@ -93,43 +147,4 @@ public class PageRankNode {
         this.nodeId = nodeId;
     }
 
-    public ArrayList<PageRankNode> getNeighborList() {
-        return neighborList;
-    }
-
-    public void setNeighborList(ArrayList<PageRankNode> neighborList) {
-        this.neighborList = neighborList;
-    }
-
-    public ArrayList<Double> getLinkValueList() {
-        return linkValueList;
-    }
-
-    public void setLinkValueList(ArrayList<Double> linkValueList) {
-        this.linkValueList = linkValueList;
-    }
-
-    public double getTotalLinkValue() {
-        return totalLinkValue;
-    }
-
-    public void setTotalLinkValue(double totalLinkValue) {
-        this.totalLinkValue = totalLinkValue;
-    }
-
-    public double[] getOldTagValue() {
-        return oldTagValue;
-    }
-
-    public void setOldTagValue(double[] oldTagValue) {
-        this.oldTagValue = oldTagValue;
-    }
-
-    public double[] getNewTagValue() {
-        return newTagValue;
-    }
-
-    public void setNewTagValue(double[] newTagValue) {
-        this.newTagValue = newTagValue;
-    }
 }
