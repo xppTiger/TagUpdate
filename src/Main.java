@@ -11,7 +11,7 @@ public class Main {
         long startTime = System.currentTimeMillis();    //获取开始时间
         Loader.load();
         long endTime = System.currentTimeMillis();    //获取结束时间
-        System.out.println("程序运行时间：" + (endTime - startTime) + "ms");    //输出程序运行时间
+        System.out.println("Running time: " + (endTime - startTime) + "ms");    //输出程序运行时间
 
 
         /*

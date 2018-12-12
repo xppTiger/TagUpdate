@@ -1,10 +1,9 @@
-import org.omg.Messaging.SYNC_WITH_TRANSPORT;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by Haiping on 2018/11/30
@@ -13,80 +12,54 @@ public class Loader {
 
 
     public static  void load(){
-        HashMap<String, PageRankNode> nodes = new HashMap<>();
+        HashMap<String, PageRankNode> videos = new HashMap<>();
+        HashMap<String, PageRankNode> users = new HashMap<>();
 
-        File tagFile = new File(Properties.tagFile);
-        File connectionFile = new File(Properties.connectionFile);
+        File videoTagFile = new File(Properties.videoTagFile);
+        File videoSimilarityFile = new File(Properties.videoSimilarityFile);
+        File videoUserScoreFile = new File(Properties.videoUserScoreFile);
         BufferedReader reader = null;
 
-        long startLoadTime = System.currentTimeMillis();    //获取Load开始时间
-        // Load Id and tag information
+        long startTime = System.currentTimeMillis();    //starting time of loading similarity and video-tag
+
+        // Load video-similarity information
+        // Table desc: video1Id | video2Id | similarity
         try {
             String tempString;
             String[] tempList;
-            PageRankNode node;
-            String nodeId;
-            int line = 1;
-
-            reader = new BufferedReader(new FileReader(tagFile));
-            while ((tempString = reader.readLine()) != null) {
-                tempList = tempString.split(",");
-                node = new PageRankNode(tempList[0], null, null, null);
-               for(int i=1; i<tempList.length; i++){
-                   node.addToOldTag(tempList[i], Properties.tagInitialValue);
-                   node.addToNewTag(tempList[i], Properties.tagInitialValue);
-               }
-               nodes.put(node.getNodeId(), node);
-               line++;
-            }
-            reader.close();
-        } catch(Exception e){
-            e.printStackTrace();
-        } finally {
-            if (reader != null) {
-                try {
-                    reader.close();
-                } catch (IOException e1) {
-                    e1.printStackTrace();
-                }
-            }
-        }
-
-        //Load connection information
-        try {
-            String tempString;
-            String[] tempList;
-            String nodeIdLeft;
-            String nodeIdRight;
+            String videoIdLeft;
+            String videoIdRight;
             double linkValue;
-
             int line = 1;
 
-            reader = new BufferedReader(new FileReader(connectionFile));
+            reader = new BufferedReader(new FileReader(videoSimilarityFile));
             while ((tempString = reader.readLine()) != null) {
                 tempList = tempString.split(",");
-                nodeIdLeft = tempList[0];
-                nodeIdRight = tempList[1];
+                //Position 0: video1Id
+                videoIdLeft = tempList[0];
+                //Position 1: video2Id
+                videoIdRight = tempList[1];
+                //Position 2: similarity
                 linkValue = Double.valueOf(tempList[2]);
-                PageRankNode nodeLeft;
-                PageRankNode nodeRight;
+                PageRankNode videoLeft;
+                PageRankNode videoRight;
 
-               // load node information
-                if(nodes.containsKey(nodeIdLeft)){
-                    nodeLeft = nodes.get(nodeIdLeft);
-                }else{
-                    nodeLeft = new PageRankNode(nodeIdLeft, null, null, null);
-                    nodes.put(nodeIdLeft, nodeLeft);
+                if(Math.abs(linkValue) > Properties.EPSILON){
+                    if(videos.containsKey(videoIdLeft)){
+                        videoLeft = videos.get(videoIdLeft);
+                    }else{
+                        videoLeft = new PageRankNode(videoIdLeft, null, null, null, null, true);
+                        videos.put(videoIdLeft, videoLeft);
+                    }
+                    if(videos.containsKey(videoIdRight)){
+                        videoRight = videos.get(videoIdRight);
+                    }else{
+                        videoRight = new PageRankNode(videoIdRight, null, null, null, null, true);
+                        videos.put(videoIdRight, videoRight);
+                    }
+                    videoLeft.addNeighbor(videoRight, linkValue);
+                    videoRight.addNeighbor(videoLeft, linkValue);
                 }
-                if(nodes.containsKey(nodeIdRight)){
-                    nodeRight = nodes.get(nodeIdRight);
-                }else{
-                    nodeRight = new PageRankNode(nodeIdRight, null, null, null);
-                    nodes.put(nodeIdRight, nodeRight);
-                }
-                nodeLeft.addNeighbor(nodeRight, linkValue);
-                nodeRight.addNeighbor(nodeLeft, linkValue);
-
                 line++;
             }
             reader.close();
@@ -102,16 +75,145 @@ public class Loader {
             }
         }
 
-        long endLoadTime = System.currentTimeMillis();    //获取Load结束时间
-        System.out.println("程序Load时间：" + (endLoadTime - startLoadTime) + "ms");    //输出程序Load时间
 
-        long startIterationTime = System.currentTimeMillis();    //获取iteration开始时间
-        TagUpdateByPageRank pr = new TagUpdateByPageRank(nodes);
-        pr.iterate();
-        long endIterationTime = System.currentTimeMillis();    //获取iteration结束时间
-        System.out.println("程序Iteration时间：" + (endIterationTime - startIterationTime) + "ms");    //输出程序Iteration时间
+        // Load category and keyword information
+        // Table desc: videoId | category | keyword1 | keyword2 | ...
+        try {
+            String tempString;
+            String[] tempList;
+            PageRankNode video;
+            String videoId;
+            int line = 1;
+
+            reader = new BufferedReader(new FileReader(videoTagFile));
+            while ((tempString = reader.readLine()) != null) {
+                tempList = tempString.split(",");
+                //Position 0: ID
+                video = videos.get(tempList[0]);
+                //Position 1: category
+                if(tempList[1].equals("") == false){
+                    video.addToOldTagCategory(tempList[1], Properties.categoryInitialValue);
+                    video.addToNewTagCategory(tempList[1], Properties.categoryInitialValue);
+                }
+                //Position 2-n: keyword
+                for(int i=2; i<tempList.length; i++){
+                    video.addToOldTagKeyword(tempList[i], Properties.keywordInitialValue);
+                    video.addToNewTagKeyword(tempList[i], Properties.keywordInitialValue);
+                }
+               line++;
+            }
+            reader.close();
+        } catch(Exception e){
+            e.printStackTrace();
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+            }
+        }
+
+        long endTime = System.currentTimeMillis();    //ending time of loading similarity and video-tag
+        System.out.println("Step 1: Loading time of similarity and video-tag: " + (endTime - startTime) + "ms");
+        System.out.println("======================================");
+        System.out.println();
+
+        startTime = System.currentTimeMillis();         //starting time of video tag update
+        // update video tags
+        TagUpdateByPageRank videoTagUpdate = new TagUpdateByPageRank(videos, Properties.videoTagUpdateIterationTimes);
+        videoTagUpdate.iterateNodes();
+        showNodes(videos, 10);
+        endTime = System.currentTimeMillis();           //ending time of video tag update
+        System.out.println("Step 2: Video tag update time: " + (endTime - startTime) + "ms");
+        System.out.println("======================================");
+        System.out.println();
+
+        for(Map.Entry<String, PageRankNode> entry: videos.entrySet()){
+            ((PageRankNode) entry.getValue()).clearNeighbor();
+        }
+
+        startTime = System.currentTimeMillis();         //starting time of loading video-user watch
+        // Load video~user watch information
+        // Table desc: videoId | userId | score
+        try {
+            String tempString;
+            String[] tempList;
+            PageRankNode video;
+            PageRankNode user;
+            String videoId;
+            String userId;
+            double linkValue;
+            int line = 1;
+
+            reader = new BufferedReader(new FileReader(videoUserScoreFile));
+            while ((tempString = reader.readLine()) != null) {
+                tempList = tempString.split(",");
+                videoId = tempList[0];
+                userId = tempList[1];
+                linkValue = Double.valueOf(tempList[2]);
+                // no need to add this line if the videoId is not in videos
+                if(Math.abs(linkValue) > Properties.EPSILON){
+                    if(videos.containsKey(videoId)){
+                        video = videos.get(videoId);
+                        if(users.containsKey(userId)){
+                            user = users.get(userId);
+                        }else{
+                            user = new PageRankNode(userId, null, null, null, null, false);
+                            users.put(userId, user);
+                        }
+                        video.addNeighbor(user, linkValue);
+                        user.addNeighbor(video, linkValue);
+                    }
+                }
+                line++;
+            }
+            reader.close();
+        } catch(Exception e){
+            e.printStackTrace();
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+            }
+        }
+
+        endTime = System.currentTimeMillis();           //ending time of loading video-user watch
+        System.out.println("Step 3: Loading time of video-user watch: " + (endTime - startTime) + "ms");
+        System.out.println("======================================");
+        System.out.println();
+
+        startTime = System.currentTimeMillis();         //starting time of user tag update
+        // update user tags
+        TagUpdateByPageRank userTagUpdate = new TagUpdateByPageRank(videos, Properties.userTagUpdateIterationTimes);
+        userTagUpdate.iterateNodes();
+        showNodes(users, 10);
+        endTime = System.currentTimeMillis();           //ending time of user tag update
+        System.out.println("Step 4: User tag update time: " + (endTime - startTime) + "ms");
+        System.out.println("======================================");
+        System.out.println();
 
     }
 
+    public static void showNodes(HashMap<String, PageRankNode> nodes, int showNum){
 
+        int num = 1;
+        for(Map.Entry<String, PageRankNode> entry: nodes.entrySet())
+        {
+            PageRankNode node = entry.getValue();
+            System.out.println("nodeSeq "+showNum);
+            System.out.println("node "+node.getNodeId()+" old category: "+node.oldTagCategoryToString());
+            System.out.println("node "+node.getNodeId()+" old keyword: "+node.oldTagKeywordToString());
+            System.out.println("node "+node.getNodeId()+" new category: "+node.newTagCategoryToString());
+            System.out.println("node "+node.getNodeId()+" new keyword: "+node.newTagKeywordToString());
+            num += 1;
+            if(num > showNum){
+                break;
+            }
+        }
+    }
 }
