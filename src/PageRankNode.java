@@ -83,10 +83,14 @@ public class PageRankNode {
             this.linkValueList.add(linkValue);
             this.totalLinkValue += linkValue;
         }
+        if(neighborList.size() != linkValueList.size()){
+            System.out.println("different lengtht, neighborlist length="+neighborList.size()+", linkvaluelist lenght="+linkValueList.size());
+        }
     }
 
     public void clearNeighbor(){
-        neighborList = new ArrayList<PageRankNode>();
+        neighborList = new ArrayList<>();
+        linkValueList = new ArrayList<>();
         totalLinkValue = 0;
     }
 
@@ -164,6 +168,7 @@ public class PageRankNode {
         }
         newTagCategory = new LinkedHashMap<>();
         newTagKeyword = new LinkedHashMap<>();
+
     }
 
     //update all neighbors' tag, both category and keyword, in each iteration

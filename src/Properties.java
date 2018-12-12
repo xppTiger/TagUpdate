@@ -11,7 +11,7 @@ public class Properties {
     public static String videoSimilarityFile = "d:\\media_tag\\similarity.txt";
     public static String videoTagFile = "d:\\media_tag\\tag.txt";
     public static String videoUserScoreFile = "d:\\media_tag\\watch.txt";
-    public static int videoTagUpdateIterationTimes = 10;
+    public static int videoTagUpdateIterationTimes = 3;
     public static int userTagUpdateIterationTimes = 1;
     public static double categoryInitialValue = 1;
     public static double keywordInitialValue = 1;

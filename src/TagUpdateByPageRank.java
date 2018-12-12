@@ -71,8 +71,8 @@ public class TagUpdateByPageRank {
         for(int i = 0; i<iterationTimes; i++){
             initializeNodes();
             updatNodes();
-            finalizeNodes();
         }
+        finalizeNodes();
     }
 
 }

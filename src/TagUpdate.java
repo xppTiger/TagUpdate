@@ -8,8 +8,7 @@ import java.util.Map;
 /**
  * Created by Haiping on 2018/11/30
  */
-public class Loader {
-
+public class TagUpdate {
 
     public static  void load(){
         HashMap<String, PageRankNode> videos = new HashMap<>();
@@ -116,6 +115,7 @@ public class Loader {
         }
 
         long endTime = System.currentTimeMillis();    //ending time of loading similarity and video-tag
+        System.out.println();
         System.out.println("Step 1: Loading time of similarity and video-tag: " + (endTime - startTime) + "ms");
         System.out.println("======================================");
         System.out.println();
@@ -126,6 +126,7 @@ public class Loader {
         videoTagUpdate.iterateNodes();
         showNodes(videos, 10);
         endTime = System.currentTimeMillis();           //ending time of video tag update
+        System.out.println();
         System.out.println("Step 2: Video tag update time: " + (endTime - startTime) + "ms");
         System.out.println("======================================");
         System.out.println();
@@ -183,6 +184,7 @@ public class Loader {
         }
 
         endTime = System.currentTimeMillis();           //ending time of loading video-user watch
+        System.out.println();
         System.out.println("Step 3: Loading time of video-user watch: " + (endTime - startTime) + "ms");
         System.out.println("======================================");
         System.out.println();
@@ -193,6 +195,7 @@ public class Loader {
         userTagUpdate.iterateNodes();
         showNodes(users, 10);
         endTime = System.currentTimeMillis();           //ending time of user tag update
+        System.out.println();
         System.out.println("Step 4: User tag update time: " + (endTime - startTime) + "ms");
         System.out.println("======================================");
         System.out.println();
@@ -205,7 +208,7 @@ public class Loader {
         for(Map.Entry<String, PageRankNode> entry: nodes.entrySet())
         {
             PageRankNode node = entry.getValue();
-            System.out.println("nodeSeq "+showNum);
+            System.out.println("nodeSeq "+num);
             System.out.println("node "+node.getNodeId()+" old category: "+node.oldTagCategoryToString());
             System.out.println("node "+node.getNodeId()+" old keyword: "+node.oldTagKeywordToString());
             System.out.println("node "+node.getNodeId()+" new category: "+node.newTagCategoryToString());
