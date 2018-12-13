@@ -74,6 +74,13 @@ public class TagUpdate {
             }
         }
 
+        long endTime = System.currentTimeMillis();    //ending time of loading similarity
+        System.out.println();
+        System.out.println("Step 1: Loading time of similarity: " + (endTime - startTime) + "ms");
+        System.out.println("======================================");
+        System.out.println();
+
+        startTime = System.currentTimeMillis();         //starting time of video tag update
 
         // Load category and keyword information
         // Table desc: videoId | category | keyword1 | keyword2 | ...
@@ -114,9 +121,9 @@ public class TagUpdate {
             }
         }
 
-        long endTime = System.currentTimeMillis();    //ending time of loading similarity and video-tag
+        endTime = System.currentTimeMillis();    //ending time of loading video-tag
         System.out.println();
-        System.out.println("Step 1: Loading time of similarity and video-tag: " + (endTime - startTime) + "ms");
+        System.out.println("Step 2: Loading time of video-tag: " + (endTime - startTime) + "ms");
         System.out.println("======================================");
         System.out.println();
 
@@ -127,7 +134,7 @@ public class TagUpdate {
         showNodes(videos, 10);
         endTime = System.currentTimeMillis();           //ending time of video tag update
         System.out.println();
-        System.out.println("Step 2: Video tag update time: " + (endTime - startTime) + "ms");
+        System.out.println("Step 3: Video tag update time: " + (endTime - startTime) + "ms");
         System.out.println("======================================");
         System.out.println();
 
@@ -185,7 +192,7 @@ public class TagUpdate {
 
         endTime = System.currentTimeMillis();           //ending time of loading video-user watch
         System.out.println();
-        System.out.println("Step 3: Loading time of video-user watch: " + (endTime - startTime) + "ms");
+        System.out.println("Step 4: Loading time of video-user watch: " + (endTime - startTime) + "ms");
         System.out.println("======================================");
         System.out.println();
 
@@ -196,7 +203,7 @@ public class TagUpdate {
         showNodes(users, 10);
         endTime = System.currentTimeMillis();           //ending time of user tag update
         System.out.println();
-        System.out.println("Step 4: User tag update time: " + (endTime - startTime) + "ms");
+        System.out.println("Step 5: User tag update time: " + (endTime - startTime) + "ms");
         System.out.println("======================================");
         System.out.println();
 
