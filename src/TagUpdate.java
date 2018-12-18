@@ -4,6 +4,9 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Created by Haiping on 2018/11/30
@@ -11,13 +14,16 @@ import java.util.Map;
 public class TagUpdate {
 
     public static  void load(){
-        HashMap<String, PageRankNode> videos = new HashMap<>();
+        //HashMap<String, PageRankNode> videos = new HashMap<>();
+        ConcurrentHashMap<String, PageRankNode> videosCon = new ConcurrentHashMap<>();
         HashMap<String, PageRankNode> users = new HashMap<>();
 
         File videoTagFile = new File(Properties.videoTagFile);
         File videoSimilarityFile = new File(Properties.videoSimilarityFile);
         File videoUserScoreFile = new File(Properties.videoUserScoreFile);
         BufferedReader reader = null;
+
+        ExecutorService fixedThreadPool = Executors.newFixedThreadPool(Properties.threadPoolSize);
 
         long startTime = System.currentTimeMillis();    //starting time of loading similarity and video-tag
 
@@ -43,24 +49,59 @@ public class TagUpdate {
                 PageRankNode videoLeft;
                 PageRankNode videoRight;
 
-                if(Math.abs(linkValue) > Properties.EPSILON){
-                    if(videos.containsKey(videoIdLeft)){
-                        videoLeft = videos.get(videoIdLeft);
-                    }else{
-                        videoLeft = new PageRankNode(videoIdLeft, null, null, null, null, true);
-                        videos.put(videoIdLeft, videoLeft);
+                // one core
+//                if(Math.abs(linkValue) > Properties.EPSILON){
+//                    if(videosCon.containsKey(videoIdLeft)){
+//                        videoLeft = videosCon.get(videoIdLeft);
+//                    }else{
+//                        videoLeft = new PageRankNode(videoIdLeft, null, null, null, null, true);
+//                        videosCon.put(videoIdLeft, videoLeft);
+//                    }
+//                    if(videosCon.containsKey(videoIdRight)){
+//                        videoRight = videosCon.get(videoIdRight);
+//                    }else{
+//                        videoRight = new PageRankNode(videoIdRight, null, null, null, null, true);
+//                        videosCon.put(videoIdRight, videoRight);
+//                    }
+//                    videoLeft.addNeighbor(videoRight, linkValue);
+//                    videoRight.addNeighbor(videoLeft, linkValue);
+//                }
+
+                // multiple cores
+                final String keyLeft = videoIdLeft;
+                final String keyRight = videoIdRight;
+                final double value = linkValue;
+
+                fixedThreadPool.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        PageRankNode vLeft;
+                        PageRankNode vRight;
+                        if(Math.abs(value)>Properties.EPSILON){
+                            if(videosCon.containsKey(keyLeft)){
+                                vLeft = videosCon.get(keyLeft);
+                            }else{
+                                vLeft = new PageRankNode(keyLeft, null, null, null, true);
+                                videosCon.put(keyLeft, vLeft);
+                            }
+                            if(videosCon.containsKey(keyRight)){
+                                vRight = videosCon.get(keyRight);
+                            }else{
+                                vRight = new PageRankNode(keyRight, null, null, null, true);
+                                videosCon.put(keyRight, vRight);
+                            }
+                            vLeft.addNeighbor(vRight, value);
+                            vRight.addNeighbor(vLeft, value);
+                        }
                     }
-                    if(videos.containsKey(videoIdRight)){
-                        videoRight = videos.get(videoIdRight);
-                    }else{
-                        videoRight = new PageRankNode(videoIdRight, null, null, null, null, true);
-                        videos.put(videoIdRight, videoRight);
-                    }
-                    videoLeft.addNeighbor(videoRight, linkValue);
-                    videoRight.addNeighbor(videoLeft, linkValue);
-                }
+                });
                 line++;
             }
+            fixedThreadPool.shutdown();
+            while(!fixedThreadPool.isTerminated()){
+                Thread.sleep(5*1000);
+            }
+
             reader.close();
         } catch(Exception e){
             e.printStackTrace();
@@ -95,7 +136,7 @@ public class TagUpdate {
             while ((tempString = reader.readLine()) != null) {
                 tempList = tempString.split(",");
                 //Position 0: ID
-                video = videos.get(tempList[0]);
+                video = videosCon.get(tempList[0]);
                 //Position 1: category
                 if(tempList[1].equals("") == false){
                     video.addToOldTagCategory(tempList[1], Properties.categoryInitialValue);
@@ -129,6 +170,10 @@ public class TagUpdate {
 
         startTime = System.currentTimeMillis();         //starting time of video tag update
         // update video tags
+        HashMap<String, PageRankNode> videos = new HashMap<>();
+        for(Map.Entry<String, PageRankNode> entry: videosCon.entrySet()){
+            videos.put(entry.getKey(), entry.getValue());
+        }
         TagUpdateByPageRank videoTagUpdate = new TagUpdateByPageRank(videos, Properties.videoTagUpdateIterationTimes);
         videoTagUpdate.iterateNodes();
         showNodes(videos, 10);
@@ -168,7 +213,7 @@ public class TagUpdate {
                         if(users.containsKey(userId)){
                             user = users.get(userId);
                         }else{
-                            user = new PageRankNode(userId, null, null, null, null, false);
+                            user = new PageRankNode(userId, null, null, null, false);
                             users.put(userId, user);
                         }
                         video.addNeighbor(user, linkValue);

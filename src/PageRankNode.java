@@ -7,8 +7,7 @@ import java.util.*;
 public class PageRankNode {
 
     private String nodeId;
-    private ArrayList<PageRankNode> neighborList;
-    private ArrayList<Double> linkValueList;
+    private HashMap<PageRankNode, Double> neighbors;
     private double totalLinkValue;
     private boolean lpaPreSet;
     private boolean lpa;
@@ -17,31 +16,26 @@ public class PageRankNode {
     public HashMap<String, Double> oldTagKeyword;
     public HashMap<String, Double> newTagKeyword;
 
-    public PageRankNode(String Id, ArrayList<PageRankNode> neighborList, ArrayList<Double> linkValueList, HashMap<String, Double> category, HashMap<String, Double> keyword, boolean lpa){
+    public PageRankNode(String Id, HashMap<PageRankNode, Double> neighbors, HashMap<String, Double> category, HashMap<String, Double> keyword, boolean lpa){
 
         boolean categorySet = false;
         boolean keywordSet = false;
         lpaPreSet = false;
 
-        if((neighborList != null)&&(linkValueList!=null)&&(neighborList.size() != linkValueList.size())){
-            System.out.println("Mismatch between pageRankNodeList and score length");
-            return;
+        this.nodeId = Id;
+
+        if(neighbors != null){
+            this.neighbors = neighbors;
+        }else{
+            this.neighbors = new HashMap<>();
         }
 
-        this.nodeId = Id;
-        if(neighborList != null){
-            this.neighborList = neighborList;
+        if(neighbors == null){
+            this.totalLinkValue = 0;
         }else{
-            this.neighborList = new ArrayList<PageRankNode>();
-        }
-        if(this.linkValueList != null){
-            this.linkValueList = linkValueList;
-        }else{
-            this.linkValueList = new ArrayList<Double>();
-        }
-        this.totalLinkValue = 0;
-        for(int i=0; i<this.linkValueList.size();i++){
-            this.totalLinkValue += linkValueList.get(i);
+            for(Map.Entry<PageRankNode, Double> entry:neighbors.entrySet()){
+                this.totalLinkValue += entry.getValue();
+            }
         }
 
         if(category != null){
@@ -68,29 +62,24 @@ public class PageRankNode {
     public void addNeighbor(PageRankNode  neighbor, double linkValue){
 
         boolean existed = false;
-        for(int i=0; i<neighborList.size();i++){
-            PageRankNode curNode = neighborList.get(i);
-            if(curNode.getNodeId().equals(neighbor.getNodeId())){
-                existed = true;
-                this.totalLinkValue -= this.linkValueList.get(i);
-                this.linkValueList.set(i, linkValue) ;
-                this.totalLinkValue +=  linkValue;
-                //System.out.println("duplicated user-video pair: "+nodeId+", "+neighbor.getNodeId()+", linkValue: "+linkValue);
+        if(neighbor != null){
+            for(Map.Entry<PageRankNode, Double> entry: neighbors.entrySet()){
+                if(entry.getKey().getNodeId().equals(neighbor.getNodeId())){
+                    existed = true;
+                    this.totalLinkValue -= entry.getValue();
+                    entry.setValue(linkValue);
+                    this.totalLinkValue += linkValue;
+                }
             }
-        }
-        if(existed == false){
-            this.neighborList.add(neighbor);
-            this.linkValueList.add(linkValue);
-            this.totalLinkValue += linkValue;
-        }
-        if(neighborList.size() != linkValueList.size()){
-            System.out.println("different lengtht, neighborlist length="+neighborList.size()+", linkvaluelist lenght="+linkValueList.size());
+            if(existed == false){
+                this.neighbors.put(neighbor, linkValue);
+                this.totalLinkValue += linkValue;
+            }
         }
     }
 
     public void clearNeighbor(){
-        neighborList = new ArrayList<>();
-        linkValueList = new ArrayList<>();
+        neighbors = new HashMap<>();
         totalLinkValue = 0;
     }
 
@@ -173,20 +162,21 @@ public class PageRankNode {
 
     //update all neighbors' tag, both category and keyword, in each iteration
     public void updateNeighborTag(){
-        if(Math.abs(totalLinkValue) > Properties.EPSILON){
-            int neighborListLength = neighborList.size();
-            for(int i = 0; i<neighborListLength; i++){
-                if(linkValueList.get(i) > Properties.EPSILON){
-                    PageRankNode prNode = neighborList.get(i);
+
+        if(Math.abs(totalLinkValue)>Properties.EPSILON){
+            for(Map.Entry<PageRankNode, Double> entryNeighbor: neighbors.entrySet()){
+                if(entryNeighbor.getValue() > Properties.EPSILON){
+                    PageRankNode prNode = entryNeighbor.getKey();
                     for(Map.Entry<String, Double> entry: oldTagCategory.entrySet()){
-                        prNode.updateNewTagCategory(entry.getKey(), entry.getValue()*linkValueList.get(i)/totalLinkValue);
+                        prNode.updateNewTagCategory(entry.getKey(), entry.getValue()*entryNeighbor.getValue()/totalLinkValue);
                     }
                     for(Map.Entry<String, Double> entry: oldTagKeyword.entrySet()){
-                        prNode.updateNewTagKeyword(entry.getKey(), entry.getValue()*linkValueList.get(i)/totalLinkValue);
+                        prNode.updateNewTagKeyword(entry.getKey(), entry.getValue()*entryNeighbor.getValue()/totalLinkValue);
                     }
                 }
             }
         }
+
     }
 
     // finalize the category, not keyword, after all iterations
